@@ -66,7 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private MqttClient mMqttClient;
     private static final String BROKER_URL = "tcp://192.168.1.3:1883";
     private static final String CLIENT_ID = "IoTDemo:" + UUID.randomUUID().toString();
-
+    private static final String SUB_TOPIC = "IoTSubTopic";
+    private static final String PUB_TOPIC = "IoTPubTopic";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                //publishMessage();
+                mMqttClient.publish(PUB_TOPIC, "Hello from android !");
 
                 /*
                 Fragment currentFragment = ((SectionsPagerAdapter) mViewPager.getAdapter()).getFragment(mViewPager.getCurrentItem());
@@ -148,57 +149,25 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mMqttClient.connect();
-    }
-
-
-/*
-    public void subscribeToTopic() {
-
-        try {
-            mqttAndroidClient.subscribe(subscriptionTopic, 0, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    Log.e(TAG, "Subscribed!");
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.e(TAG, "Failed to subscribe");
-                }
-            });
-
-            // THIS DOES NOT WORK!
-            mqttAndroidClient.subscribe(subscriptionTopic, 0, new IMqttMessageListener() {
-                @Override
-                public void messageArrived(String topic, MqttMessage message) throws Exception {
-                    // message Arrived!
-                    System.out.println("Message: " + topic + " : " + new String(message.getPayload()));
-                }
-            });
-
-        } catch (MqttException ex) {
-            System.err.println("Exception whilst subscribing");
-            ex.printStackTrace();
-        }
-
-    }
-
-    public void publishMessage(){
-
-        try {
-            MqttMessage message = new MqttMessage();
-            message.setPayload(publishMessage.getBytes());
-            mqttAndroidClient.publish(publishTopic, message);
-            Log.e(TAG, "Message Published");
-            if(!mqttAndroidClient.isConnected()){
-                Log.e(TAG, mqttAndroidClient.getBufferedMessageCount() + " messages in buffer.");
+        mMqttClient.subscribe(SUB_TOPIC, new IMqttActionListener() {
+            @Override
+            public void onSuccess(IMqttToken asyncActionToken) {
+                Log.d(TAG, "Subscribed!");
             }
-        } catch (MqttException e) {
-            System.err.println("Error Publishing: " + e.getMessage());
-            e.printStackTrace();
-        }
+
+            @Override
+            public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                Log.d(TAG, "Failed to subscribe");
+            }
+        }, new IMqttMessageListener() {
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                // message Arrived!
+                System.out.println("Message: " + topic + " : " + new String(message.getPayload()));
+            }
+        });
     }
-*/
+
     private void deactivateAllService() {
         SectionsPagerAdapter adapter = ((SectionsPagerAdapter) mViewPager.getAdapter());
 
