@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +26,14 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.vision.text.Text;
 
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import tn.esprit.iotdemo.MainActivity;
 import tn.esprit.iotdemo.R;
+import tn.esprit.iotdemo.mqtt.MqttClient;
 
 import static android.content.Context.SENSOR_SERVICE;
 
@@ -33,6 +41,16 @@ import static android.content.Context.SENSOR_SERVICE;
  * A simple {@link Fragment} subclass.
  */
 public class HeartbeatSensorFragment extends Fragment implements SensorEventListener {
+    private static final String TAG = HeartbeatSensorFragment.class.getName();
+
+    private static final String PUB_TOPIC = "IoTDemo/Heartbeat:Data";
+    private static final String SUB_TOPIC = "IoTDemo/Heartbeat:Control";
+    private static final String ERROR_TOPIC = "IoTDemo/Heartbeat:Error";
+
+    private static final String MESSAGE_ON = "ON";
+    private static final String MESSAGE_OFF = "OFF";
+
+    private MqttClient mMqttClient;
 
     private SensorManager mSensorManager;
     private Sensor mHeartbeat;
@@ -96,7 +114,7 @@ public class HeartbeatSensorFragment extends Fragment implements SensorEventList
         YAxis rightAxis = mChart.getAxisRight();
         rightAxis.setEnabled(false);
 
-        for (int i = 0; i < 5; i ++) addEntry(i);
+        for (int i = 0; i < 5; i++) addEntry(i);
     }
 
     private void addEntry(float value) {
@@ -155,6 +173,43 @@ public class HeartbeatSensorFragment extends Fragment implements SensorEventList
 
         mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
         mHeartbeat = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+        mMqttClient = ((MainActivity) getActivity()).getMqttClient();
+
+        mMqttClient.subscribe(SUB_TOPIC, new IMqttActionListener() {
+            @Override
+            public void onSuccess(IMqttToken asyncActionToken) {
+                Log.d(TAG, "Subscribed successfully to: " + SUB_TOPIC);
+            }
+
+            @Override
+            public void onFailure(IMqttToken asyncActionToken, Throwable e) {
+                Log.d(TAG, "Error occured while trying to subscribe to: " + SUB_TOPIC);
+                e.printStackTrace();
+            }
+        }, new IMqttMessageListener() {
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                String msg = new String(message.getPayload());
+                Log.d(TAG, "Message : '" + msg + "' arrived on topic : '" + topic + "'");
+                if (msg.equals(MESSAGE_ON)) {
+                    if (!isActive()) {
+                        activateSensor();
+                        ((MainActivity) getActivity()).fab.setImageResource(R.drawable.ic_media_pause);
+                        Log.e(TAG, "[Server] Activating heartbeat service.");
+                    } else {
+                        Log.d(TAG, "[Server] Heartbeat service already active !");
+                    }
+                } else if (msg.equals(MESSAGE_OFF)) {
+                    if (isActive()) {
+                        deactivateSensor();
+                        ((MainActivity) getActivity()).fab.setImageResource(R.drawable.ic_media_play);
+                        Log.e(TAG, "[Server] Deactivating heartbeat service.");
+                    } else {
+                        Log.d(TAG, "[Server] Heartbeat service already inactive !");
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -181,6 +236,7 @@ public class HeartbeatSensorFragment extends Fragment implements SensorEventList
     public void onSensorChanged(SensorEvent event) {
         mTxtHeartbeat.setText(Double.toString(event.values[0]));
         addEntry(event.values[0]);
+        mMqttClient.publish(PUB_TOPIC, Double.toString(event.values[0]));
     }
 
     @Override
@@ -190,6 +246,7 @@ public class HeartbeatSensorFragment extends Fragment implements SensorEventList
             Toast.makeText(getActivity(), "Put your finger near the sensor !", Toast.LENGTH_LONG).show();
             mTxtStatus.setText("Not Recording");
             mTxtStatus.setTextColor(0xffff4444); // red
+            mMqttClient.publish(ERROR_TOPIC, "Sensor not detecting finger !");
         } else {
             mTxtStatus.setText("Recording");
             mTxtStatus.setTextColor(0xff99cc00); // green

@@ -1,19 +1,9 @@
-const startMQTTServer = require('./mqttServer')
+const startMQTTBroker = require('./back/mqtt/mqttBroker'),
+      config = require('./config'),
+      RemoteSensor = require('./back/RemoteSensor'),
+      { HEARTBEAT_TOPIC } = require('./back/mqtt/topics');
 
-startMQTTServer((server) => {
+startMQTTBroker((server) => {
+    console.log('Mosca server is up and running on port', config.mqttBrokerPort);
 
-    var mqtt = require('mqtt')
-    var client = mqtt.connect('mqtt://localhost:1883')
-
-    client.on('connect', function () {
-        client.subscribe('IoTPubTopic')
-        
-    })
-
-    client.on('message', function (topic, message) {
-        // message is Buffer 
-        console.log(topic, message.toString())
-        client.publish('IoTSubTopic', 'Hello from IoTDemoServer')
-    })
-
-});
+}, { port: config.mqttBrokerPort });

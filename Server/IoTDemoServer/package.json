@@ -4,12 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node node_modules/concurrently/src/main \"npm run server\" \"npm run client\"",
+    "server": "node index",
+    "client": "cd front && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Ahmed Moalla",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.14.1",
+    "lodash": "^3.10.1",
     "mosca": "^2.2.0",
     "mqtt": "^2.3.1"
+  },
+  "devDependencies": {
+    "concurrently": "^3.2.0"
   }
 }

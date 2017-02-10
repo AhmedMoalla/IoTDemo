@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
-    private FloatingActionButton fab;
+    public FloatingActionButton fab;
 
     private MqttClient mMqttClient;
     private static final String BROKER_URL = "tcp://192.168.1.3:1883";
@@ -174,5 +174,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public MqttClient getMqttClient() {
+        return mMqttClient;
+    }
 
 }

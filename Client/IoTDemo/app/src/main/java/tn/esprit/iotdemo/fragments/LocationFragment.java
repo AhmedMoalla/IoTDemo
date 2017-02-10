@@ -27,9 +27,27 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.vision.text.Text;
 
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import tn.esprit.iotdemo.MainActivity;
 import tn.esprit.iotdemo.R;
+import tn.esprit.iotdemo.mqtt.MqttClient;
 
 public class LocationFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, com.google.android.gms.location.LocationListener {
+
+    private static final String TAG = LocationFragment.class.getName();
+
+    private static final String PUB_TOPIC = "IoTDemo/Location:Data";
+    private static final String SUB_TOPIC = "IoTDemo/Location:Control";
+    private static final String ERROR_TOPIC = "IoTDemo/Location:Error";
+
+    private static final String MESSAGE_ON = "ON";
+    private static final String MESSAGE_OFF = "OFF";
+
+    private MqttClient mMqttClient;
 
     private GoogleApiClient mGoogleApiClient;
     private GoogleMap map;
@@ -40,6 +58,49 @@ public class LocationFragment extends Fragment implements GoogleApiClient.Connec
     TextView mTxtLongitude;
     TextView mTxtStatus;
     MapView mMapView;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        mMqttClient = ((MainActivity) getActivity()).getMqttClient();
+
+        mMqttClient.subscribe(SUB_TOPIC, new IMqttActionListener() {
+            @Override
+            public void onSuccess(IMqttToken asyncActionToken) {
+                Log.d(TAG, "Subscribed successfully to: " + SUB_TOPIC);
+            }
+
+            @Override
+            public void onFailure(IMqttToken asyncActionToken, Throwable e) {
+                Log.d(TAG, "Error occured while trying to subscribe to: " + SUB_TOPIC);
+                e.printStackTrace();
+            }
+        }, new IMqttMessageListener() {
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                String msg = new String(message.getPayload());
+                Log.d(TAG, "Message : '" + msg + "' arrived on topic : '" + topic + "'");
+                if (msg.equals(MESSAGE_ON)) {
+                    if (!isActive()) {
+                        setupGoogleLocationApi();
+                        ((MainActivity) getActivity()).fab.setImageResource(R.drawable.ic_media_pause);
+                        Log.e(TAG, "[Server] Activating Location service.");
+                    } else {
+                        Log.d(TAG, "[Server] Location service already active !");
+                    }
+                } else if (msg.equals(MESSAGE_OFF)) {
+                    if (isActive()) {
+                        disconnect();
+                        ((MainActivity) getActivity()).fab.setImageResource(R.drawable.ic_media_play);
+                        Log.e(TAG, "[Server] Deactivating Location service.");
+                    } else {
+                        Log.d(TAG, "[Server] Location service already inactive !");
+                    }
+                }
+            }
+        });
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -101,6 +162,7 @@ public class LocationFragment extends Fragment implements GoogleApiClient.Connec
     @Override
     public void onConnectionSuspended(int cause) {
         Log.d("MainActivity", "Connection to Google API suspended");
+        mMqttClient.publish(ERROR_TOPIC, "Connection to Google API suspended");
     }
 
     private LocationRequest createLocationRequest() {
@@ -123,7 +185,7 @@ public class LocationFragment extends Fragment implements GoogleApiClient.Connec
         map.animateCamera(cameraUpdate);
 
         // Notify server here!
-        // TODO
+        mMqttClient.publish(PUB_TOPIC, Double.toString(location.getLatitude()) + "|" + Double.toString(location.getLongitude()));
     }
 
     @Override
