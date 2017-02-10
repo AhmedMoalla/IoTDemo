@@ -1,0 +1,15 @@
+{
+  "name": "iotdemo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ahmed Moalla",
+  "license": "ISC",
+  "dependencies": {
+    "mosca": "^2.2.0",
+    "mqtt": "^2.3.1"
+  }
+}

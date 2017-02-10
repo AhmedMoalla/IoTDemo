@@ -1,0 +1,144 @@
+package tn.esprit.iotdemo.fragments;
+
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.vision.text.Text;
+
+import tn.esprit.iotdemo.R;
+
+public class LocationFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, com.google.android.gms.location.LocationListener {
+
+    private GoogleApiClient mGoogleApiClient;
+    private GoogleMap map;
+    private boolean mIsActive = false;
+
+    // View components
+    TextView mTxtLatitude;
+    TextView mTxtLongitude;
+    TextView mTxtStatus;
+    MapView mMapView;
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View rootView = inflater.inflate(R.layout.fragment_location, container, false);
+        mTxtLatitude = (TextView) rootView.findViewById(R.id.txt_latitude_location);
+        mTxtLongitude = (TextView) rootView.findViewById(R.id.txt_longitude_location);
+        mTxtStatus = (TextView) rootView.findViewById(R.id.txt_status_location);
+        mMapView = (MapView) rootView.findViewById(R.id.mapView);
+        mMapView.onCreate(savedInstanceState);
+
+        mMapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap map) {
+                map.getUiSettings().setMyLocationButtonEnabled(false);
+                if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                map.setMyLocationEnabled(true);
+
+                MapsInitializer.initialize(getActivity());
+                LatLng tunisiaLatLng = new LatLng(36.8017133d, 10.3447479d);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(tunisiaLatLng, 8);
+                map.animateCamera(cameraUpdate);
+                LocationFragment.this.map = map;
+            }
+        });
+
+        return rootView;
+    }
+
+    public void setupGoogleLocationApi() {
+        // Start Google Client
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addConnectionCallbacks(this).addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+        mTxtStatus.setTextColor(0xff99cc00); // green
+        mTxtStatus.setText("Activated");
+        mIsActive = true;
+    }
+
+    public void disconnect() {
+        mGoogleApiClient.disconnect();
+        mTxtStatus.setTextColor(0xffff4444); // red
+        mTxtStatus.setText("Not Activated");
+        mIsActive = false;
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        LocationRequest mLocationRequest = createLocationRequest();
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        Log.d("MainActivity", "Connection to Google API suspended");
+    }
+
+    private LocationRequest createLocationRequest() {
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        return mLocationRequest;
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d("Location Update", "Latitude: " + location.getLatitude() +
+                " Longitude: " + location.getLongitude());
+        mTxtLatitude.setText(Double.toString(location.getLatitude()));
+        mTxtLongitude.setText(Double.toString(location.getLongitude()));
+        // Update map
+        LatLng newPos = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(newPos, 16);
+        map.animateCamera(cameraUpdate);
+
+        // Notify server here!
+        // TODO
+    }
+
+    @Override
+    public void onResume() {
+        mMapView.onResume();
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mMapView.onPause();
+    }
+
+    public boolean isActive() {
+        return mIsActive;
+    }
+}
