@@ -98,10 +98,6 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                mMqttClient.publish(PUB_TOPIC, "Hello from android !");
-
-                /*
                 Fragment currentFragment = ((SectionsPagerAdapter) mViewPager.getAdapter()).getFragment(mViewPager.getCurrentItem());
 
                 if (currentFragment instanceof LocationFragment) {
@@ -130,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     return;
                 }
-                */
+
             }
         });
 
@@ -149,23 +145,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mMqttClient.connect();
-        mMqttClient.subscribe(SUB_TOPIC, new IMqttActionListener() {
-            @Override
-            public void onSuccess(IMqttToken asyncActionToken) {
-                Log.d(TAG, "Subscribed!");
-            }
-
-            @Override
-            public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                Log.d(TAG, "Failed to subscribe");
-            }
-        }, new IMqttMessageListener() {
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                // message Arrived!
-                System.out.println("Message: " + topic + " : " + new String(message.getPayload()));
-            }
-        });
     }
 
     private void deactivateAllService() {
