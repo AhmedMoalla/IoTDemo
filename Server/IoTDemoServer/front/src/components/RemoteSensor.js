@@ -1,5 +1,5 @@
-const mqtt = require('mqtt'),
-    config = require('../config');
+import mqtt from 'mqtt';
+import config from '../../config';
 
 const MESSAGE_ON = 'ON',
     MESSAGE_OFF = 'OFF',
@@ -50,6 +50,7 @@ class RemoteSensor {
         this.client.on('message', (topic, message) => {
             if (topic === `${this.sensorTopic}:${DATA_SUFFIX}`)
                 callback(message);
+            else console.log('not data', message.toString())
         })
     }
 
@@ -63,4 +64,4 @@ class RemoteSensor {
 
 }
 
-module.exports = RemoteSensor;
+export default RemoteSensor;

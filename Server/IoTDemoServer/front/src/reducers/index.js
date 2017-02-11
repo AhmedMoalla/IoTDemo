@@ -1,7 +1,10 @@
-import { combineReducers } from 'redux';
+import {
+	combineReducers
+} from 'redux';
+import SensorReducer from './CurrentSensorReducer';
 
 const rootReducer = combineReducers({
-  state: (state = {}) => state
+	currentSensor: SensorReducer
 });
 
 export default rootReducer;

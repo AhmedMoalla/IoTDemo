@@ -108,7 +108,7 @@ public class MqttClient {
             MqttMessage message = new MqttMessage();
             message.setPayload(msg.getBytes());
             mMqttAndroidClient.publish(topic, message);
-            Log.d(TAG, "Message Published");
+            Log.d(TAG, "Message: '" + msg + "' Published to : '" + topic + "'");
             if(!mMqttAndroidClient.isConnected()){
                 Log.d(TAG, mMqttAndroidClient.getBufferedMessageCount() + " messages in buffer.");
             }

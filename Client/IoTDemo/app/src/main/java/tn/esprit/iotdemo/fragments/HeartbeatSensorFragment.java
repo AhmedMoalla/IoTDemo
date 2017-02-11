@@ -250,6 +250,7 @@ public class HeartbeatSensorFragment extends Fragment implements SensorEventList
         } else {
             mTxtStatus.setText("Recording");
             mTxtStatus.setTextColor(0xff99cc00); // green
+            System.out.println("Accuracy : " + accuracy);
         }
     }
 }

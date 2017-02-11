@@ -1,10 +1,12 @@
+var path=require("path");
+
 module.exports = {
   entry: [
-    './src/index.js'
+    './src/index.jsx'
   ],
   output: {
-    path: __dirname,
-    publicPath: '/',
+    path: path.resolve(__dirname, "build"),
+    //publicPath: '/',
     filename: 'bundle.js'
   },
   module: {
@@ -24,5 +26,6 @@ module.exports = {
     contentBase: './',
     port: 3000,
     stats: 'errors-only'
-  }
+  },
+  //proxy: "http://localhost:3001/"
 };

@@ -13,10 +13,9 @@ module.exports = function startMQTTServer(callback, settings) {
     });
 
     // fired when a message is received
-    /*
     server.on('published', function (packet, client) {
         console.log('Published', packet);
-    });*/
+    });
 
     server.on('ready', setup);
 

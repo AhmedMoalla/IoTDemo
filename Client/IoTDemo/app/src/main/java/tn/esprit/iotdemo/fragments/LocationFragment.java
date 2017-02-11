@@ -185,7 +185,7 @@ public class LocationFragment extends Fragment implements GoogleApiClient.Connec
         map.animateCamera(cameraUpdate);
 
         // Notify server here!
-        mMqttClient.publish(PUB_TOPIC, Double.toString(location.getLatitude()) + "|" + Double.toString(location.getLongitude()));
+        mMqttClient.publish(PUB_TOPIC, "{ \"lat\": " + Double.toString(location.getLatitude()) + ", \"lng\": " + Double.toString(location.getLongitude()) + "}");
     }
 
     @Override
